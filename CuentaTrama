@@ -4,7 +4,7 @@ var amqp = require('amqp');
 var helper = require('./amqp-hacks');
 var conexion = amqp.createConnection({host: 'localhost'});
 
-var pcap = require("../pcap"), pcap_session;
+var pcap = require("./pcap"), pcap_session;
     
 if (process.argv.length > 4) {
     console.error("Fltro para contar paquetes");
