@@ -11,46 +11,40 @@ if (process.argv.length > 4) {
     process.exit(1);
 }
 
-function offline() {
-    pcap_session = pcap.createOfflineSession(process.argv[2], process.argv[3]);
-}
-
-function online() {
+function EstablecerSesion() {
     pcap_session = pcap.createSession(process.argv[2], process.argv[3]);
 
-    // Print all devices, currently listening device prefixed with an asterisk
-    console.log("Capture device list: ");
+    // Muestra información del dispositivo de red por donde está escuchando la aplicación
+
+    console.log("Escuchando por el dispositivo: ");
     pcap_session.findalldevs().forEach(function (dev) {
         var ret = "    ";
         if (pcap_session.device_name === dev.name) {
             ret += "* ";
-        //}
-        ret += dev.name + " ";
-        if (dev.addresses.length > 0) {
-            ret += dev.addresses.filter(function (address) {
-                return address.addr;
-            }).map(function (address) {
-                return address.addr + "/" + address.netmask;
-            }).join(", ");
-        } else {
-            ret += "no address";
-        }
-        console.log(ret);
-       }
+            ret += dev.name + " ";
+            if (dev.addresses.length > 0) {
+                ret += dev.addresses.filter(function (address) {
+                    return address.addr;
+                }).map(function (address) {
+                    return address.addr + "/" + address.netmask;
+                }).join(", ");
+            } else {
+                ret += "Error: No se encontró dispositivo para escuchar";
+            }
+            
+            console.log(ret);
+           
+           }
     });
 
-    console.log();
 }
 
 try {
-    var stat = require("fs").statSync(process.argv[2]);
-    if (stat && stat.isFile()) {
-        offline();
-    } else {
-        online();
-    }
+
+        EstablecerSesion();
+
 } catch (err) {
-    online();
+    EstablecerSesion();
 }
 
 // Listen for packets, decode them, and feed the simple printer.  No tricks.
