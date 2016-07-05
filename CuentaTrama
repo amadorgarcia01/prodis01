@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 
+var amqp = require('amqp');
+var helper = require('./amqp-hacks');
+var conexion = amqp.createConnection({host: 'localhost'});
+
 var pcap = require("../pcap"), pcap_session;
     
 if (process.argv.length > 4) {
-    console.error("usage: simple_capture interface filter");
-    console.error("Examples: ");
-    console.error('  simple_capture "" "tcp port 80"');
-    console.error('  simple_capture eth1 ""');
-    console.error('  simple_capture lo0 "ip proto \\tcp and tcp port 80"');
+    console.error("Fltro para contar paquetes");
+    console.error("Ejemplos: ");
+    console.error('  CuentaTrama "" "tcp port 80"');
+    console.error('  CuentaTrama eth1 ""');
+    console.error('  CuentaTrama lo0 "ip proto \\tcp and tcp port 80"');
     process.exit(1);
 }
 
@@ -17,40 +21,55 @@ function EstablecerSesion() {
     // Muestra información del dispositivo de red por donde está escuchando la aplicación
 
     console.log("Escuchando por el dispositivo: ");
+    
     pcap_session.findalldevs().forEach(function (dev) {
-        var ret = "    ";
-        if (pcap_session.device_name === dev.name) {
-            ret += "* ";
-            ret += dev.name + " ";
-            if (dev.addresses.length > 0) {
-                ret += dev.addresses.filter(function (address) {
-                    return address.addr;
-                }).map(function (address) {
-                    return address.addr + "/" + address.netmask;
-                }).join(", ");
-            } else {
-                ret += "Error: No se encontró dispositivo para escuchar";
-            }
+    var ret = "    ";
+    if (pcap_session.device_name === dev.name) {
+        contador = 0;
+        ret += "* ";
+        ret += dev.name + " ";
+        if (dev.addresses.length > 0) {
+            ret += dev.addresses.filter(function (address) {
+                return address.addr;
+            }).map(function (address) {
+                return address.addr + "/" + address.netmask;
+            }).join(", ");
+        } else {
+            ret += "Error: No se encontró dispositivo de red para escuchar";
+        }
             
-            console.log(ret);
-           
-           }
+        console.log(ret);
+
+    conexion.on('ready', function(){
+        console.log('Conexión exitosa con servidor');
+
     });
 
+           
+    }
+    });
 }
 
 try {
+        console.log('Conexión exitosa con servidor');
 
         EstablecerSesion();
+
+        //helper.safeEndConnection(conexion);
 
 } catch (err) {
     EstablecerSesion();
 }
 
-// Listen for packets, decode them, and feed the simple printer.  No tricks.
+// Escucha los paquetes según el filtro indicado como parámetro y los cuentas
 pcap_session.on("packet", function (raw_packet) {
-    var packet = pcap.decode.packet(raw_packet);
-    var header = packet.pcap_header;
 
-    console.log(packet.payload.toString());
+    contador++;
+    mensaje = "Cantidad de paquetes: ";
+    mensaje += contador + ' '; 
+
+    conexion.publish('sencilla', mensaje);
+    console.log('Mensaje enviado -> %s', mensaje);
+
+
 });
