@@ -1,24 +1,55 @@
 #!/usr/bin/env node
 
+//*********************************************
+// Para la ejecución de la aplicación y que se cumpla lo indicado en la aisgnación se deben realizar las siguientes
+// tareas:
+// 1) En un terminal, ubicado en el directorio donde están los fuentes, ejecutar: node consumidor.js
+// 2) En otro terminal, en la misma ubicación, ejecutar: ./CuentaTrama "" "icmp"
+//
+// Debe tener permiso de superusuario
+//*********************************************
+
+//*********************************************
+// Declaración de las vaiables necesarias para manejar la conexión amqp con Rabbitmq
+//*********************************************
 var amqp = require('amqp');
 var helper = require('./amqp-hacks');
 var conexion = amqp.createConnection({host: 'localhost'});
 
+//*********************************************
+// Declaración de la vaiable necesarias para monitorear el transito por el dispositivo de red
+//*********************************************
 var pcap = require("./pcap"), pcap_session;
     
+//*********************************************
+// Se evaluan los parámetros con los que se pueden ejecutar la aplicación, para la asignación debe ejecutarse
+// con los siguientes parámetros:
+//  ./CuentaTrama "" "icmp"
+// en las líneas siguientes se dan mas ejemplos de como puede ejecutarse la aplicación para que cuente lo que
+// queremos. En caso de no especificar parámetros se cuentan todas las tramas
+//*********************************************
 if (process.argv.length > 4) {
     console.error("Fltro para contar paquetes");
     console.error("Ejemplos: ");
-    console.error('  CuentaTrama "" "tcp port 80"');
-    console.error('  CuentaTrama eth1 ""');
-    console.error('  CuentaTrama lo0 "ip proto \\tcp and tcp port 80"');
+    console.error('  ./CuentaTrama "" "tcp port 80"');
+    console.error('  ./CuentaTrama eth1 ""');
+    console.error('  ./CuentaTrama lo0 "ip proto \\tcp and tcp port 80"');
     process.exit(1);
 }
 
+//*********************************************
+// Se establecen las conexiones necesarias tanto para Rabbitmq como para pcap
+//*********************************************
 function EstablecerSesion() {
+
+//*********************************************
+// Se crea la sesión pcap con los argumentos de filtrado indicados, de existir
+//*********************************************
     pcap_session = pcap.createSession(process.argv[2], process.argv[3]);
 
-    // Muestra información del dispositivo de red por donde está escuchando la aplicación
+//*********************************************
+// Muestra información del dispositivo de red por donde está escuchando la aplicación
+//*********************************************
 
     console.log("Escuchando por el dispositivo: ");
     
@@ -40,6 +71,9 @@ function EstablecerSesion() {
             
         console.log(ret);
 
+//*********************************************
+// Se establese la conexión amqp con Rabbitmq
+//*********************************************
     conexion.on('ready', function(){
         console.log('Conexión exitosa con servidor');
 
@@ -51,25 +85,24 @@ function EstablecerSesion() {
 }
 
 try {
-        console.log('Conexión exitosa con servidor');
-
         EstablecerSesion();
-
-        //helper.safeEndConnection(conexion);
 
 } catch (err) {
     EstablecerSesion();
 }
 
+//*********************************************
 // Escucha los paquetes según el filtro indicado como parámetro y los cuentas
+//*********************************************
 pcap_session.on("packet", function (raw_packet) {
 
     contador++;
     mensaje = "Cantidad de paquetes: ";
     mensaje += contador + ' '; 
 
+//*********************************************
+// Publica la información en la cola de mensajes
+//*********************************************
     conexion.publish('sencilla', mensaje);
     console.log('Mensaje enviado -> %s', mensaje);
-
-
 });
