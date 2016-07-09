@@ -1,15 +1,6 @@
 #!/usr/bin/env node
 
 //*********************************************
-// Para la ejecución de la aplicación y que se cumpla lo indicado en la aisgnación se deben realizar las siguientes
-// tareas:
-// 1) En un terminal, ubicado en el directorio donde están los fuentes, ejecutar: node consumidor.js
-// 2) En otro terminal, en la misma ubicación, ejecutar: ./CuentaTrama "" "icmp"
-//
-// Debe tener permiso de superusuario
-//*********************************************
-
-//*********************************************
 // Declaración de las vaiables necesarias para manejar la conexión amqp con Rabbitmq
 //*********************************************
 var amqp = require('amqp');
